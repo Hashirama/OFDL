@@ -24,3 +24,15 @@ Written using Python 3.7 so use 3.7 or anything above.
 On Windows, tkinter should already come with Python 3 so the only thing needed would be requests:
 
 <pre><code>pip install requests</code></pre>
+
+Then run the script OFDL.py by double clicking it or from IDLE (IDLE would be better just incase any errors occur).
+
+I don't believe tkinter comes installed with Python 3 on Ubuntu so it can be installed using:
+
+<pre><code>sudo apt-get install python3.7-tk</pre></code>
+
+(Assuming you are using Python 3.7.) If requests is needed run:
+
+<pre><code>pip3 install requests</code></pre>
+
+To run script: <pre><code>python3.7 OFDL.py</code></pre>

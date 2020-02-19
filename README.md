@@ -36,3 +36,7 @@ I don't believe tkinter comes installed with Python 3 on Ubuntu so it can be ins
 <pre><code>pip3 install requests</code></pre>
 
 To run script: <pre><code>python3.7 OFDL.py</code></pre>
+
+# Note
+
+I didn't implement stories because I don't have any user to test the functionality on but I've implemented Highlights.

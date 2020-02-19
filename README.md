@@ -6,7 +6,7 @@ Downloads media files from Onlyfans (images, videos, highlights)
 On Windows the only requirement should be requests which can be installed using pip.exe in the Scripts folder of the python installation directory - "pip install requests". 
 
 
-Before logging in, press F12 to bring up the "developer tools" and then log in. Type "init?" in the search bar and retrieve the "sess" cookie from the header section. Copy the sess cookie starting after the equal "=" to, but not including the semi-colon ";". Also copy the user-agent:
+Before logging in, press F12 (or inspect/inspect element and go to the network tab) to bring up the "developer tools" and then log in. Type "init?" in the search bar and retrieve the "sess" cookie from the header section. Copy the sess cookie starting after the equal "=" to, but not including the semi-colon ";". Also copy the user-agent:
 
 <img src="https://github.com/Hashirama/OFDL/blob/master/onlyfans1.png">
 

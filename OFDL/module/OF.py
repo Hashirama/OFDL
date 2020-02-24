@@ -177,36 +177,37 @@ class Onlyfans:
                 js_message.append(json_data)
                 offset += 1
             for j in js_message:
-                json_list = j["list"]
-                for sec in json_list:
-                    media = sec["media"]
-                    date = sec["createdAt"]
-                    for m in media:
-                        if m is None:
-                            continue
-                        id_post = sec["id"]
-                        type_src = m["type"]
-                        src = m["src"]
-                        if src is None:
-                            continue
-                        m_info = m["info"]
-                        m_info = m_info["source"]
-                        file_size = m_info["size"]
-                        if type_src == "photo":
-                            self.all_files_size += file_size
-                            file_dict = {"source" : src, "size": file_size, "index" : index, "id": id_post,
-                                         "date" : date, "flag" : MESSAGES}
-                            images.append(file_dict)
-                        elif type_src == "video":
-                            self.all_files_size += file_size
-                            file_dict = {"source" : src, "size": file_size, "index" : index, "id": id_post,
-                                         "date" : date, "flag" : MESSAGES}
-                            videos.append(file_dict)
-                        elif type_src == "audio":
-                            self.all_files_size += file_size
-                            file_dict = {"source" : src, "size": file_size, "index" : index, "id": id_post,
-                                         "date" : date, "flag" : MESSAGES}
-                            audio.append(file_dict)
+                if "list" in j:
+                    json_list = j["list"]
+                    for sec in json_list:
+                        if "media" in sec:
+                            media = sec["media"]
+                            date = sec["createdAt"]
+                            for m in media:
+                                if "src" in m and "type" in m:
+                                    id_post = sec["id"]
+                                    type_src = m["type"]
+                                    src = m["src"]
+                                    if src is None:
+                                        continue
+                                    m_info = m["info"]
+                                    m_info = m_info["source"]
+                                    file_size = m_info["size"]
+                                    if type_src == "photo":
+                                        self.all_files_size += file_size
+                                        file_dict = {"source" : src, "size": file_size, "index" : index, "id": id_post,
+                                                     "date" : date, "flag" : MESSAGES}
+                                        images.append(file_dict)
+                                    elif type_src == "video":
+                                        self.all_files_size += file_size
+                                        file_dict = {"source" : src, "size": file_size, "index" : index, "id": id_post,
+                                                     "date" : date, "flag" : MESSAGES}
+                                        videos.append(file_dict)
+                                    elif type_src == "audio":
+                                        self.all_files_size += file_size
+                                        file_dict = {"source" : src, "size": file_size, "index" : index, "id": id_post,
+                                                     "date" : date, "flag" : MESSAGES}
+                                        audio.append(file_dict)
 
         if flag & PICTURES or flag & VIDEOS:
             json_data = []
@@ -219,43 +220,43 @@ class Onlyfans:
         if flag & PICTURES:
             for j in json_data:
                 for js in j:
-                    date = js["postedAt"]
-                    media = js["media"]
-                    id_post = js["id"]
-                    for m in media:
-                        if m is None:
-                            continue
-                        file_details = m["source"]
-                        file_size = file_details["size"]
-                        type_src = file_details["source"]
-                        if type_src is None:
-                            continue
-                        if ".jpg" in type_src or ".jpeg" in type_src:
-                            self.all_files_size += file_size
-                            file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
+                    if "postedAt" in js and "media" in js and "id" in js:
+                        date = js["postedAt"]
+                        media = js["media"]
+                        id_post = js["id"]
+                        for m in media:
+                            if "source" in m:
+                                file_details = m["source"]
+                                file_size = file_details["size"]
+                                type_src = file_details["source"]
+                                if type_src is None:
+                                    continue
+                                if ".jpg" in type_src or ".jpeg" in type_src:
+                                    self.all_files_size += file_size
+                                    file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
                                          "date" : date, "flag" : PICTURES}
-                            images.append(file_dict)
+                                    images.append(file_dict)
 
             
         if flag & VIDEOS:
             for j in json_data:
                 for js in j:
-                    date = js["postedAt"]
-                    media = js["media"]
-                    id_post = js["id"]
-                    for m in media:
-                        if m is None:
-                            continue
-                        file_details = m["source"]
-                        file_size = file_details["size"]
-                        type_src = file_details["source"]
-                        if type_src is None:
-                            continue
-                        if ".mp4" in type_src:
-                            self.all_files_size += file_size
-                            file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
+                    if "postedAt" in js and "media" in js and "id" in js:
+                        date = js["postedAt"]
+                        media = js["media"]
+                        id_post = js["id"]
+                        for m in media:
+                            if "source" in m:
+                                file_details = m["source"]
+                                file_size = file_details["size"]
+                                type_src = file_details["source"]
+                                if type_src is None:
+                                    continue
+                                if ".mp4" in type_src:
+                                    self.all_files_size += file_size
+                                    file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
                                          "date" : date, "flag" : VIDEOS}
-                            videos.append(file_dict)
+                                    videos.append(file_dict)
                             
         self.links += highlights + images + videos + audio
 

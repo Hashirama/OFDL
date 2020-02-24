@@ -121,16 +121,9 @@ class Onlyfans:
         videos = []
         audio = []
         highlights = []
-        offset_range = 0
         total_count = info["photosCount"] + info["videosCount"] + info["audiosCount"]
-        
-        if (total_count % 100) == 0:
-            offset_range = int(total_count / 100)
-        else:
-            if total_count < 100:
-                offset_range = int(math.ceil(total_count / 100))
-            else:
-                offset_range = int(math.floor(total_count / 100))
+
+        offset_range = math.ceil(total_count / 100)
 
         offsets = list(range(offset_range))
 
@@ -230,6 +223,8 @@ class Onlyfans:
                     media = js["media"]
                     id_post = js["id"]
                     for m in media:
+                        if m is None:
+                            continue
                         file_details = m["source"]
                         file_size = file_details["size"]
                         type_src = file_details["source"]
@@ -249,6 +244,8 @@ class Onlyfans:
                     media = js["media"]
                     id_post = js["id"]
                     for m in media:
+                        if m is None:
+                            continue
                         file_details = m["source"]
                         file_size = file_details["size"]
                         type_src = file_details["source"]

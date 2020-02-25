@@ -39,6 +39,4 @@ To run script: <pre><code>python3.7 OFDL.py</code></pre>
 
 # Note
 
-I didn't implement stories because I don't have any user to test the functionality on but I've implemented Highlights.
-
 onlyfans.sqlite3.db is a file that stores information on all the downloaded files. It exists to prevent the same files being downloaded again. If you do update the application, store this file in the same directory as the OFDL.py file before running the script for the first time.

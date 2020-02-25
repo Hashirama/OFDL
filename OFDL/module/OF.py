@@ -5,10 +5,11 @@ import os
 import sqlite3
 from sqlite3 import Error
 
-MESSAGES = 0b0100
-PICTURES = 0b0010
-VIDEOS = 0b0001
-HIGHLIGHTS = 0b1000
+MESSAGES = 0b10000
+PICTURES = 0b01000
+VIDEOS = 0b00100
+HIGHLIGHTS = 0b00010
+STORIES = 0b00001
 
 class Onlyfans:
     def __init__(self):
@@ -120,6 +121,7 @@ class Onlyfans:
         images = []
         videos = []
         audio = []
+        stories = []
         highlights = []
         total_count = info["photosCount"] + info["videosCount"] + info["audiosCount"]
 
@@ -216,6 +218,25 @@ class Onlyfans:
                 post_tmp = post_api.replace("offset=", "offset=" + offset)
                 r = self.session.get(post_tmp)
                 json_data.append(json.loads(r.text))
+                
+            r = self.session.get(stories_api)
+            js = json.loads(r.text)
+            for j in js:
+                if "media" in j and "createdAt" in j:
+                    m = j["media"]
+                    date = j["createdAt"]
+                    post_id = j["id"]
+                    for media in m:
+                        if "source" in media:
+                            file_details = media["source"]
+                            src = file_details["source"]
+                            file_size = file_details["size"]
+                            file_dict = {"source" : src, "size" : file_size, "index" : index, "id" : post_id,
+                                         "date" : date, "flag" : STORIES}
+                            stories.append(file_dict)
+                            
+                        
+            
         
         if flag & PICTURES:
             for j in json_data:
@@ -258,7 +279,7 @@ class Onlyfans:
                                          "date" : date, "flag" : VIDEOS}
                                     videos.append(file_dict)
                             
-        self.links += highlights + images + videos + audio
+        self.links += stories + highlights + images + videos + audio
 
         list_copy = self.links.copy()
 
@@ -335,6 +356,8 @@ class Onlyfans:
             directory = "Posts"
         elif flag & HIGHLIGHTS:
             directory = "Highlights"
+        elif flag & STORIES:
+            directory = "Stories"
 
         self.create_dir(folder + "/" + directory)
 

@@ -415,13 +415,15 @@ class MainWindow:
             return "Images"
         elif flag & module.OF.VIDEOS:
             return "Videos"
+        elif flag & module.OF.STORIES:
+            return "Stories"
 
 
     def display_info(self, links):
         total_size = 0
         user_size = 0
         file_count = 0
-        type_file = {"Messages" : 0, "Highlights" : 0, "Images" : 0, "Videos" : 0}
+        type_file = {"Messages" : 0, "Highlights" : 0, "Images" : 0, "Videos" : 0, "Stories" : 0}
         
         self.LogText.delete(1.0, tk.END)
         current_user = links[0]["index"]

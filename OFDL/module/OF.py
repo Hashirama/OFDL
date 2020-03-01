@@ -234,11 +234,12 @@ class Onlyfans:
                     for media in m:
                         if "source" in media:
                             file_details = media["source"]
-                            src = file_details["source"]
-                            file_size = file_details["size"]
-                            file_dict = {"source" : src, "size" : file_size, "index" : index, "id" : post_id,
-                                         "date" : date, "flag" : STORIES}
-                            stories.append(file_dict)
+                            if "source" in file_details and "size" in file_details:
+                                src = file_details["source"]
+                                file_size = file_details["size"]
+                                file_dict = {"source" : src, "size" : file_size, "index" : index, "id" : post_id,
+                                             "date" : date, "flag" : STORIES}
+                                stories.append(file_dict)
                             
                         
             
@@ -253,15 +254,16 @@ class Onlyfans:
                         for m in media:
                             if "source" in m:
                                 file_details = m["source"]
-                                file_size = file_details["size"]
-                                type_src = file_details["source"]
-                                if type_src is None:
-                                    continue
-                                if ".jpg" in type_src or ".jpeg" in type_src:
-                                    self.all_files_size += file_size
-                                    file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
-                                         "date" : date, "flag" : PICTURES}
-                                    images.append(file_dict)
+                                if "size" in file_details and "source" in file_details:
+                                    file_size = file_details["size"]
+                                    type_src = file_details["source"]
+                                    if type_src is None or not type_src.startswith('https://cdn'):
+                                        continue
+                                    if ".jpg" in type_src or ".jpeg" in type_src or ".png" in type_src:
+                                        self.all_files_size += file_size
+                                        file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
+                                             "date" : date, "flag" : PICTURES}
+                                        images.append(file_dict)
 
             
         if flag & VIDEOS:
@@ -274,15 +276,16 @@ class Onlyfans:
                         for m in media:
                             if "source" in m:
                                 file_details = m["source"]
-                                file_size = file_details["size"]
-                                type_src = file_details["source"]
-                                if type_src is None:
-                                    continue
-                                if ".mp4" in type_src:
-                                    self.all_files_size += file_size
-                                    file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
-                                         "date" : date, "flag" : VIDEOS}
-                                    videos.append(file_dict)
+                                if "size" in file_details and "source" in file_details:
+                                    file_size = file_details["size"]
+                                    type_src = file_details["source"]
+                                    if type_src is None or not type_src.startswith('https://cdn'):
+                                        continue
+                                    if ".mp4" in type_src:
+                                        self.all_files_size += file_size
+                                        file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
+                                             "date" : date, "flag" : VIDEOS}
+                                        videos.append(file_dict)
                             
         self.links += stories + highlights + images + videos + audio
 

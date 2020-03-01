@@ -152,8 +152,8 @@ class Onlyfans:
                 json_data = json.loads(r.text)
                 highlight_id = json_data["id"]
                 date = json_data["createdAt"]
-                stories = json_data["stories"]
-                for story in stories:
+                highlight_stories = json_data["stories"]
+                for story in highlight_stories:
                     media = story["media"]
                     story_id = story["id"]
                     for m in media:

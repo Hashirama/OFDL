@@ -145,25 +145,30 @@ class Onlyfans:
         if flag & HIGHLIGHTS:
             highlight = "https://onlyfans.com/api2/v2/stories/highlights/?app-token=" + self.app_token
             r = self.session.get(highlight_api)
-            json_hi = json.loads(r.text)
-            for js in json_hi:
-                highlight_temp = highlight.replace("highlights/", "highlights/" + str(js["id"]))
-                r = self.session.get(highlight_temp)
-                json_data = json.loads(r.text)
-                highlight_id = json_data["id"]
-                date = json_data["createdAt"]
-                stories = json_data["stories"]
-                for story in stories:
-                    media = story["media"]
-                    story_id = story["id"]
-                    for m in media:
-                        src_json = m["source"]
-                        src = src_json["source"]
-                        file_size = src_json["size"]
-                        self.all_files_size += file_size
-                        file_dict = {"source" : src, "size": file_size, "index" : index, "id": story_id,
-                                     "date" : date, "flag" : HIGHLIGHTS}
-                        highlights.append(file_dict)
+            if "error" not in r.text:
+                json_hi = json.loads(r.text)
+                for js in json_hi:
+                    highlight_temp = highlight.replace("highlights/", "highlights/" + str(js["id"]))
+                    r = self.session.get(highlight_temp)
+                    json_data = json.loads(r.text)
+                    if "id" in json_data and "createdAt" in json_data and "stories" in json_data:
+                        highlight_id = json_data["id"]
+                        date = json_data["createdAt"]
+                        stories_json = json_data["stories"]
+                        for story in stories_json:
+                            if "media" in story and "id" in story:
+                                media = story["media"]
+                                story_id = story["id"]
+                                for m in media:
+                                    if "source" in m:
+                                        src_json = m["source"]
+                                        if "source" in src_json:
+                                            src = src_json["source"]
+                                            file_size = src_json["size"]
+                                            self.all_files_size += file_size
+                                            file_dict = {"source" : src, "size": file_size, "index" : index, "id": story_id,
+                                                             "date" : date, "flag" : HIGHLIGHTS}
+                                            highlights.append(file_dict)
                                        
 
         if flag & MESSAGES:
@@ -283,6 +288,7 @@ class Onlyfans:
 
         list_copy = self.links.copy()
 
+
         for link in list_copy:
             filename = link["source"].split('/')[-1]
             filename = filename.split('?')[0]
@@ -363,7 +369,7 @@ class Onlyfans:
 
         
 
-        if File_Extension == "jpg" or File_Extension == "jpeg":
+        if File_Extension == "jpg" or File_Extension == "jpeg" or File_Extension == "png":
             self.create_dir(folder + "/" + directory + "/Images")
             with open("Files/" + folder + "/" + directory + "/Images/" + File_Name, "wb") as file:
                 response = self.session.get(file_name, stream=True)
@@ -391,7 +397,7 @@ class Onlyfans:
                         file.write(data)
         else:
             self.create_dir(folder + "/" + directory + "/Misc")
-            with open("Files/" + folder + "/" + directory + "/Videos/" + File_Name, "wb") as file:
+            with open("Files/" + folder + "/" + directory + "/Misc/" + File_Name, "wb") as file:
                 response = self.session.get(file_name, stream=True)
                 tmp = response.headers.get('content-length')
                 if tmp is None:

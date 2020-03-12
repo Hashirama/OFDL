@@ -48,17 +48,16 @@ class Onlyfans:
 
     def set_values(self):
         self.user_agent = self.config["user-agent"]
-        self.sess = self.config["sess"]
+        self.sess = self.config["cookie"]
         self.app_token = self.config["app-token"]
-        #self.fp = self.config["fp"]
 
     def get_subscriptions(self):
         if len(self.config) == 0:
             return
         self.session.headers = {
             'User-Agent': self.user_agent, 'Referer': 'https://onlyfans.com',
-            'accept': 'application/json, text/plain, */*'}
-        self.session.cookies.set(**{'name': 'sess', 'value': self.sess})
+            'accept': 'application/json, text/plain, */*',
+            'Cookie' : self.sess}
 
         r = self.session.get(
                 "https://onlyfans.com/api2/v2/users/me?app-token=" + self.app_token)

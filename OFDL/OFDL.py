@@ -154,7 +154,7 @@ class MyDialog(tkinter.simpledialog.Dialog):
         cookie = self.cookie.get()
         user_agent = self.user_agent.get()
         if cookie is not None:
-            data["sess"] = cookie
+            data["cookie"] = cookie
         if user_agent is not None:
             data["user-agent"] = user_agent
         try:

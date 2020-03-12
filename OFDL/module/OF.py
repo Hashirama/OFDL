@@ -57,8 +57,7 @@ class Onlyfans:
             return
         self.session.headers = {
             'User-Agent': self.user_agent, 'Referer': 'https://onlyfans.com',
-            'accept': 'application/json, text/plain, */*'}
-        self.session.cookies.set(**{'name': 'sess', 'value': self.sess})
+            'accept': 'application/json, text/plain, */*', 'Cookie': self.sess}
 
         r = self.session.get(
                 "https://onlyfans.com/api2/v2/users/me?app-token=" + self.app_token)

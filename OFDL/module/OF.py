@@ -11,6 +11,7 @@ VIDEOS = 0b00100
 HIGHLIGHTS = 0b00010
 STORIES = 0b00001
 
+
 class Onlyfans:
     def __init__(self):
         self.active_subs = []
@@ -28,14 +29,15 @@ class Onlyfans:
     def get_database(self):
         conn = None
         try:
-            conn = sqlite3.connect('onlyfans.sqlite3.db', check_same_thread=False)
+            conn = sqlite3.connect('onlyfans.sqlite3.db',
+                                   check_same_thread=False)
             c = conn.cursor()
             c.execute("CREATE TABLE IF NOT EXISTS `entries`"
                       "(`id`	TEXT, `url` TEXT, `userid` TEXT, `username` TEXT, `filename` TEXT);")
         except Error as e:
-            print (e)
+            print(e)
         return conn
-    
+
     def load_config(self):
         try:
             self.f = open("config.json")
@@ -52,31 +54,39 @@ class Onlyfans:
         self.app_token = self.config["app-token"]
 
     def get_subscriptions(self):
+        offsets = []
         if len(self.config) == 0:
             return
         self.session.headers = {
             'User-Agent': self.user_agent, 'Referer': 'https://onlyfans.com',
             'accept': 'application/json, text/plain, */*',
-            'Cookie' : self.sess}
+            'Cookie': self.sess}
 
         r = self.session.get(
-                "https://onlyfans.com/api2/v2/users/me?app-token=" + self.app_token)
+            "https://onlyfans.com/api2/v2/users/me?app-token=" + self.app_token)
         if r.status_code != 200:
-            print ("Login failed")
+            print("Login failed")
             return
         r = self.session.get(
-                "https://onlyfans.com/api2/v2/subscriptions/count/all?app-token="+self.app_token)
-        subscription_link = "https://onlyfans.com/api2/v2/subscriptions/subscribes?limit=99&offset=0&app-token="+self.app_token
-        json_result = self.session.get(subscription_link)
-        json_result = json.loads(json_result.content)
+            "https://onlyfans.com/api2/v2/subscriptions/count/all?app-token="+self.app_token)
+        json_data = json.loads(r.text)
+        total_count = json_data["subscriptions"]["all"]
+        offset_range = math.ceil(total_count / 99)
+        offsets = list(range(offset_range))
+        subscription_link = "https://onlyfans.com/api2/v2/subscriptions/subscribes?limit=99&offset=&app-token="+self.app_token
 
-        for sub in json_result:
-            if sub["subscribedBy"] == True:
-                self.active_subs.append(sub["username"])
-            else:
-                self.expired_subs.append(sub["username"])
-            self.all_subs.append(sub["username"])
+        for n in offsets:
+            offset = str(n * 99)
+            post_tmp = subscription_link.replace("offset=", "offset=" + offset)
+            r = self.session.get(post_tmp)
+            subscription_json_data = json.loads(r.text)
 
+            for sub in subscription_json_data:
+                if sub["subscribedBy"] == True:
+                    self.active_subs.append(sub["username"])
+                else:
+                    self.expired_subs.append(sub["username"])
+                self.all_subs.append(sub["username"])
 
     def return_active_subs(self):
         return self.active_subs
@@ -88,14 +98,15 @@ class Onlyfans:
         return self.all_subs
 
     def get_user_info(self, username):
-        link = 'https://onlyfans.com/api2/v2/users/' + username + '&app-token=' + self.app_token
+        link = 'https://onlyfans.com/api2/v2/users/' + \
+            username + '&app-token=' + self.app_token
         return_dict = {}
         r = self.session.get(link)
         json_data = json.loads(r.text)
         if json_data is None:
             return
         if "error" in json_data:
-            print (json_data)
+            print(json_data)
             return
         return_dict["photosCount"] = json_data["photosCount"]
         return_dict["videosCount"] = json_data["videosCount"]
@@ -111,7 +122,6 @@ class Onlyfans:
         self.current_dl = 0
         self.all_files_size = 0
 
-
     def get_links(self, info, flag, index):
         if info is None:
             return
@@ -122,24 +132,24 @@ class Onlyfans:
         audio = []
         stories = []
         highlights = []
-        total_count = info["photosCount"] + info["videosCount"] + info["audiosCount"]
+        total_count = info["photosCount"] + \
+            info["videosCount"] + info["audiosCount"]
 
         offset_range = math.ceil(total_count / 100)
 
         offsets = list(range(offset_range))
 
         message_api = "https://onlyfans.com/api2/v2/chats/"+str(user_id) + \
-        "/messages?limit=100&offset=&order=desc&app-token="+self.app_token
+            "/messages?limit=100&offset=&order=desc&app-token="+self.app_token
 
-        post_api = "https://onlyfans.com/api2/v2/users/"+ str(user_id) + \
-        "/posts?limit=100&offset=&order=publish_date_desc&app-token="+self.app_token
+        post_api = "https://onlyfans.com/api2/v2/users/" + str(user_id) + \
+            "/posts?limit=100&offset=&order=publish_date_desc&app-token="+self.app_token
 
-        stories_api = "https://onlyfans.com/api2/v2/users/"+ str(user_id) + \
-        "/stories?limit=100&offset=0&order=desc&app-token="+ self.app_token
+        stories_api = "https://onlyfans.com/api2/v2/users/" + str(user_id) + \
+            "/stories?limit=100&offset=0&order=desc&app-token=" + self.app_token
 
         highlight_api = "https://onlyfans.com/api2/v2/users/" + str(user_id) + \
-                     "/stories/highlights?app-token=" + self.app_token
-
+            "/stories/highlights?app-token=" + self.app_token
 
         if flag & HIGHLIGHTS:
             highlight = "https://onlyfans.com/api2/v2/stories/highlights/?app-token=" + self.app_token
@@ -147,7 +157,8 @@ class Onlyfans:
             if "error" not in r.text:
                 json_hi = json.loads(r.text)
                 for js in json_hi:
-                    highlight_temp = highlight.replace("highlights/", "highlights/" + str(js["id"]))
+                    highlight_temp = highlight.replace(
+                        "highlights/", "highlights/" + str(js["id"]))
                     r = self.session.get(highlight_temp)
                     json_data = json.loads(r.text)
                     if "id" in json_data and "createdAt" in json_data and "stories" in json_data:
@@ -165,10 +176,9 @@ class Onlyfans:
                                             src = src_json["source"]
                                             file_size = src_json["size"]
                                             self.all_files_size += file_size
-                                            file_dict = {"source" : src, "size": file_size, "index" : index, "id": story_id,
-                                                             "date" : date, "flag" : HIGHLIGHTS}
+                                            file_dict = {"source": src, "size": file_size, "index": index, "id": story_id,
+                                                         "date": date, "flag": HIGHLIGHTS}
                                             highlights.append(file_dict)
-                                       
 
         if flag & MESSAGES:
             js_message = []
@@ -177,7 +187,8 @@ class Onlyfans:
             json_data = json.loads(r.text)
             js_message.append(json_data)
             while json_data["hasMore"] == True:
-                message_temp = message_api.replace("offset=", "offset=" + str(offset * 100))
+                message_temp = message_api.replace(
+                    "offset=", "offset=" + str(offset * 100))
                 r = self.session.get(message_temp)
                 json_data = json.loads(r.text)
                 js_message.append(json_data)
@@ -201,18 +212,18 @@ class Onlyfans:
                                     file_size = m_info["size"]
                                     if type_src == "photo":
                                         self.all_files_size += file_size
-                                        file_dict = {"source" : src, "size": file_size, "index" : index, "id": id_post,
-                                                     "date" : date, "flag" : MESSAGES}
+                                        file_dict = {"source": src, "size": file_size, "index": index, "id": id_post,
+                                                     "date": date, "flag": MESSAGES}
                                         images.append(file_dict)
                                     elif type_src == "video":
                                         self.all_files_size += file_size
-                                        file_dict = {"source" : src, "size": file_size, "index" : index, "id": id_post,
-                                                     "date" : date, "flag" : MESSAGES}
+                                        file_dict = {"source": src, "size": file_size, "index": index, "id": id_post,
+                                                     "date": date, "flag": MESSAGES}
                                         videos.append(file_dict)
                                     elif type_src == "audio":
                                         self.all_files_size += file_size
-                                        file_dict = {"source" : src, "size": file_size, "index" : index, "id": id_post,
-                                                     "date" : date, "flag" : MESSAGES}
+                                        file_dict = {"source": src, "size": file_size, "index": index, "id": id_post,
+                                                     "date": date, "flag": MESSAGES}
                                         audio.append(file_dict)
 
         if flag & PICTURES or flag & VIDEOS:
@@ -222,7 +233,7 @@ class Onlyfans:
                 post_tmp = post_api.replace("offset=", "offset=" + offset)
                 r = self.session.get(post_tmp)
                 json_data.append(json.loads(r.text))
-                
+
             r = self.session.get(stories_api)
             js = json.loads(r.text)
             for j in js:
@@ -236,13 +247,10 @@ class Onlyfans:
                             if "source" in file_details and "size" in file_details:
                                 src = file_details["source"]
                                 file_size = file_details["size"]
-                                file_dict = {"source" : src, "size" : file_size, "index" : index, "id" : post_id,
-                                             "date" : date, "flag" : STORIES}
+                                file_dict = {"source": src, "size": file_size, "index": index, "id": post_id,
+                                             "date": date, "flag": STORIES}
                                 stories.append(file_dict)
-                            
-                        
-            
-        
+
         if flag & PICTURES:
             for j in json_data:
                 for js in j:
@@ -260,11 +268,10 @@ class Onlyfans:
                                         continue
                                     if ".jpg" in type_src or ".jpeg" in type_src or ".png" in type_src:
                                         self.all_files_size += file_size
-                                        file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
-                                             "date" : date, "flag" : PICTURES}
+                                        file_dict = {"source": type_src, "size": file_size, "index": index, "id": id_post,
+                                                     "date": date, "flag": PICTURES}
                                         images.append(file_dict)
 
-            
         if flag & VIDEOS:
             for j in json_data:
                 for js in j:
@@ -282,14 +289,13 @@ class Onlyfans:
                                         continue
                                     if ".mp4" in type_src:
                                         self.all_files_size += file_size
-                                        file_dict = {"source" : type_src, "size": file_size, "index" : index, "id": id_post,
-                                             "date" : date, "flag" : VIDEOS}
+                                        file_dict = {"source": type_src, "size": file_size, "index": index, "id": id_post,
+                                                     "date": date, "flag": VIDEOS}
                                         videos.append(file_dict)
-                            
+
         self.links += stories + highlights + images + videos + audio
 
         list_copy = self.links.copy()
-
 
         for link in list_copy:
             filename = link["source"].split('/')[-1]
@@ -301,8 +307,9 @@ class Onlyfans:
     def select_database(self, userid, filename):
         try:
             c = self.conn.cursor()
-            c.execute("SELECT * FROM entries where userid = ? AND filename = ?", (userid, filename,))
-            data=c.fetchall()
+            c.execute(
+                "SELECT * FROM entries where userid = ? AND filename = ?", (userid, filename,))
+            data = c.fetchall()
             if len(data) > 0:
                 return True
             return False
@@ -319,15 +326,14 @@ class Onlyfans:
         try:
             c = self.conn.cursor()
             c.execute('INSERT INTO entries VALUES(?,?,?,?,?)', (str(post_id), str(url), str(id_user), str(username),
-                                                                  str(File_Name)))
+                                                                str(File_Name)))
             self.conn.commit()
         except sqlite3.IntegrityError:
             pass
 
-
     def return_links(self):
         return self.links
-    
+
     def clear_links(self):
         if len(self.links) > 0:
             del self.links[:]
@@ -369,8 +375,6 @@ class Onlyfans:
 
         self.create_dir(folder + "/" + directory)
 
-        
-
         if File_Extension == "jpg" or File_Extension == "jpeg" or File_Extension == "png":
             self.create_dir(folder + "/" + directory + "/Images")
             with open("Files/" + folder + "/" + directory + "/Images/" + File_Name, "wb") as file:
@@ -382,7 +386,8 @@ class Onlyfans:
                     total_length = int(tmp)
                     for data in response.iter_content(chunk_size=4096):
                         self.current_dl += len(data)
-                        obj.ProgressBar['value'] =  (self.current_dl / total_download) * 100
+                        obj.ProgressBar['value'] = (
+                            self.current_dl / total_download) * 100
                         file.write(data)
         elif File_Extension == "mp4":
             self.create_dir(folder + "/" + directory + "/Videos")
@@ -395,7 +400,8 @@ class Onlyfans:
                     total_length = int(tmp)
                     for data in response.iter_content(chunk_size=4096):
                         self.current_dl += len(data)
-                        obj.ProgressBar['value'] =  (self.current_dl / total_download) * 100
+                        obj.ProgressBar['value'] = (
+                            self.current_dl / total_download) * 100
                         file.write(data)
         else:
             self.create_dir(folder + "/" + directory + "/Misc")
@@ -408,9 +414,9 @@ class Onlyfans:
                     total_length = int(tmp)
                     for data in response.iter_content(chunk_size=4096):
                         self.current_dl += len(data)
-                        obj.ProgressBar['value'] =  (self.current_dl / total_download) * 100
+                        obj.ProgressBar['value'] = (
+                            self.current_dl / total_download) * 100
                         file.write(data)
-            
 
     def create_dir(self, dirname):
         try:

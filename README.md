@@ -10,7 +10,7 @@ Before logging in, press F12 (or inspect/inspect element and go to the network t
 
 <img src="https://github.com/Hashirama/OFDL/blob/master/of2.png">
 
-Paste the sess cookie and user-agent to the application and press OK:
+Paste the cookie and user-agent to the application and press OK:
 
 <img src="https://github.com/Hashirama/OFDL/blob/master/of.png" width="500">
 

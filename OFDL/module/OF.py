@@ -57,7 +57,7 @@ class Onlyfans:
 
 
     def create_sign(self, session, url, sess, user_agent, text="onlyfans"):
-        time = str(int(round(time2.time() * 1000-300000)))
+        time = str(int(round(time2.time() * 1000-301000)))
         path = url.split(".")[1]
         path = path.split("m", 1)[1]
         a = [sess, time, path, user_agent, text]

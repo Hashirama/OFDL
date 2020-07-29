@@ -4,6 +4,8 @@ import math
 import os
 import sqlite3
 from sqlite3 import Error
+import time as time2
+import hashlib
 
 MESSAGES = 0b1000000
 PICTURES = 0b0100000
@@ -53,23 +55,53 @@ class Onlyfans:
         self.sess = self.config["cookie"]
         self.app_token = self.config["app-token"]
 
+
+    def create_sign(self, session, url, sess, user_agent, text="onlyfans"):
+        time = str(int(round(time2.time() * 1000-300000)))
+        path = url.split(".")[1]
+        path = path.split("m", 1)[1]
+        a = [sess, time, path, user_agent, text]
+        msg = "\n".join(a)
+        message = msg.encode("utf-8")
+        hash_object = hashlib.sha1(message)
+        sha_1 = hash_object.hexdigest()
+        session.headers["sign"] = sha_1
+        session.headers["time"] = time
+        
+        return sha_1, time
+
+    def get_sess(self):
+        sess = self.sess
+        sess = sess[sess.find("sess=") + 5:]
+        sess = sess[0:sess.find(";"):]
+        return sess
+    
+
     def get_subscriptions(self):
         if len(self.config) == 0:
             return
+
+        meurl = "https://onlyfans.com/api2/v2/users/me?app-token=" + self.app_token
+        suburl = "https://onlyfans.com/api2/v2/subscriptions/count/all?app-token="+self.app_token
+
         self.session.headers = {
             'User-Agent': self.user_agent, 'Referer': 'https://onlyfans.com',
             'accept': 'application/json, text/plain, */*',
-            'Cookie' : self.sess}
+            'Cookie' : self.sess,
+            }
+        
+        self.create_sign(self.session, meurl, self.get_sess(), self.user_agent)
 
-        r = self.session.get(
-                "https://onlyfans.com/api2/v2/users/me?app-token=" + self.app_token)
+        r = self.session.get(meurl)
         if r.status_code != 200:
             print ("Login failed")
             print (r.content)
             return
+
+
+        self.create_sign(self.session, meurl, self.get_sess(), self.user_agent)
+        r = self.session.get(suburl)
         
-        r = self.session.get(
-                "https://onlyfans.com/api2/v2/subscriptions/count/all?app-token="+self.app_token)
         r = json.loads(r.text)
         count = r["subscriptions"]["all"]
 
@@ -81,6 +113,8 @@ class Onlyfans:
         for off in offsets:
             offset_str = off * 99
             sub_temp = subscription_link.replace("offset=", "offset=" + str(offset_str))
+
+            self.create_sign(self.session, sub_temp, self.get_sess(), self.user_agent)
             json_result = self.session.get(sub_temp)
             json_result = json.loads(json_result.content)
             for sub in json_result:
@@ -105,6 +139,8 @@ class Onlyfans:
     def get_user_info(self, username):
         link = 'https://onlyfans.com/api2/v2/users/' + username + '&app-token=' + self.app_token
         return_dict = {}
+
+        self.create_sign(self.session, link, self.get_sess(), self.user_agent)
         r = self.session.get(link)
         json_data = json.loads(r.text)
         if json_data is None:
@@ -172,6 +208,8 @@ class Onlyfans:
                 json_hi = json.loads(r.text)
                 for js in json_hi:
                     highlight_temp = highlight.replace("highlights/", "highlights/" + str(js["id"]))
+
+                    self.create_sign(self.session, highlight_temp, self.get_sess(), self.user_agent)
                     r = self.session.get(highlight_temp)
                     json_data = json.loads(r.text)
                     if "id" in json_data and "createdAt" in json_data and "stories" in json_data:
@@ -201,6 +239,8 @@ class Onlyfans:
         if flag & MESSAGES:
             js_message = []
             offset = 0
+
+            self.create_sign(self.session, message_api, self.get_sess(), self.user_agent)
             r = self.session.get(message_api)
             json_data = json.loads(r.text)
             js_message.append(json_data)
@@ -253,9 +293,12 @@ class Onlyfans:
             for n in offsets:
                 offset = str(n * 100)
                 post_tmp = post_api.replace("offset=", "offset=" + offset)
+
+                self.create_sign(self.session, post_tmp, self.get_sess(), self.user_agent)
                 r = self.session.get(post_tmp)
                 json_data.append(json.loads(r.text))
-                
+
+            self.create_sign(self.session, stories_api, self.get_sess(), self.user_agent)    
             r = self.session.get(stories_api)
             js = json.loads(r.text)
             for j in js:
@@ -341,6 +384,8 @@ class Onlyfans:
 
              for off in offsets_arch:
                  arch_temp = archive_api.replace("offset=", "offset=" + str(off))
+
+                 self.create_sign(self.session, arch_temp, self.get_sess(), self.user_agent)
                  r = self.session.get(arch_temp)
                  js = json.loads(r.text)
 
@@ -381,6 +426,8 @@ class Onlyfans:
 
             for off in offsets_arch:
                  audio_api = audio_api.replace("offset=", "offset=" + str(off))
+
+                 self.create_sign(self.session, audio_api, self.get_sess(), self.user_agent)
                  r = self.session.get(audio_api)
                  js = json.loads(r.text)
 

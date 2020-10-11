@@ -1,7 +1,7 @@
 # OFDL
-Onlyfans media downloader with graphical user interface using Python's tkinter.
+meh media downloader with graphical user interface using Python's tkinter.
 
-Downloads media files from Onlyfans (images, videos, highlights)
+Downloads media files from *meh* (images, videos, highlights)
 
 On Windows the only requirement should be requests which can be installed using pip.exe in the Scripts folder of the python installation directory - "pip install requests". 
 
@@ -37,6 +37,3 @@ I don't believe tkinter comes installed with Python 3 on Ubuntu so it can be ins
 
 To run script: <pre><code>python3.7 OFDL.py</code></pre>
 
-# Note
-
-onlyfans.sqlite3.db is a file that stores information on all the downloaded files. It exists to prevent the same files being downloaded again. If you do update the application, store this file in the same directory as the OFDL.py file before running the script for the first time.

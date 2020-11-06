@@ -125,6 +125,9 @@ class Onlyfans:
                         self.expired_subs.append(sub["username"])
                 if sub["username"] not in self.all_subs:
                     self.all_subs.append(sub["username"])
+        self.active_subs.sort()
+        self.expired_subs.sort()
+        self.all_subs.sort()
 
 
     def return_active_subs(self):

@@ -6,7 +6,7 @@ Downloads media files from *meh* (images, videos, highlights)
 On Windows the only requirement should be requests which can be installed using pip.exe in the Scripts folder of the python installation directory - "pip install requests". 
 
 
-Before logging in, press F12 (or inspect/inspect element and go to the network tab) to bring up the "developer tools" and then log in. Type "init?" in the search bar and copy the text after the word "cookie:" but don't copy the "referer:". So when copying the cookie you should highlight: sc_is_visitor_unique, ref_src, sess, auth_id and auth_hash. Also copy the user-agent:
+Before logging in, press F12 (or inspect/inspect element and go to the network tab) to bring up the "developer tools" and then log in. Type "init?" in the search bar and copy the text after the word "cookie:" but don't copy the "referer:". So when copying the cookie you should highlight: sc_is_visitor_unique, ref_src, sess, auth_id and auth_hash (some might not be there anymore so just copy what you do see there). Also copy the user-agent:
 
 <img src="https://github.com/Hashirama/OFDL/blob/master/of2.png">
 

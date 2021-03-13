@@ -1,25 +1,28 @@
+import logging
 import os
 import json
-import time
 import threading
 import module.OF
 import tkinter as tk
 from tkinter.ttk import *
 import tkinter.simpledialog
-from module.OF import Onlyfans
+from module.OF import OnlyFans
 from tkinter import messagebox
 from icons.checked import checked_icon
 from icons.tristate import tristate_icon
 from icons.unchecked import unchecked_icon
 from module.DateEntry import DateEntry as DateEntry
 
-class CheckboxTreeview(Treeview):
+logging.basicConfig(level=logging.INFO)
+
+
+class CheckboxTreeView(Treeview):
     def __init__(self, master=None, **kw):
         Treeview.__init__(self, master, **kw)
 
         self.im_checked = tk.PhotoImage(data=checked_icon)
-        self.im_unchecked = tk.PhotoImage(data = unchecked_icon)
-        self.im_tristate = tk.PhotoImage(data = tristate_icon)
+        self.im_unchecked = tk.PhotoImage(data=unchecked_icon)
+        self.im_tristate = tk.PhotoImage(data=tristate_icon)
         self.tag_configure("unchecked", image=self.im_unchecked)
         self.tag_configure("tristate", image=self.im_tristate)
         self.tag_configure("checked", image=self.im_checked)
@@ -31,23 +34,23 @@ class CheckboxTreeview(Treeview):
             automatically if no tag among ('checked', 'unchecked', 'tristate')
             is given """
         if not "tags" in kw:
-            kw["tags"] = ("unchecked",)
+            kw["tags"] = ("unchecked", )
         elif not ("unchecked" in kw["tags"] or "checked" in kw["tags"]
                   or "tristate" in kw["tags"]):
-            kw["tags"] = ("unchecked",)
+            kw["tags"] = ("unchecked", )
         Treeview.insert(self, parent, index, iid, **kw)
 
     def check_descendant(self, item):
         """ check the boxes of item's descendants """
         children = self.get_children(item)
         for iid in children:
-            self.item(iid, tags=("checked",))
+            self.item(iid, tags=("checked", ))
             self.check_descendant(iid)
 
     def check_ancestor(self, item):
         """ check the box of item and change the state of the boxes of item's
             ancestors accordingly """
-        self.item(item, tags=("checked",))
+        self.item(item, tags=("checked", ))
         parent = self.parent(item)
         if parent:
             children = self.get_children(parent)
@@ -62,7 +65,7 @@ class CheckboxTreeview(Treeview):
     def tristate_parent(self, item):
         """ put the box of item in tristate and change the state of the boxes of
             item's ancestors accordingly """
-        self.item(item, tags=("tristate",))
+        self.item(item, tags=("tristate", ))
         parent = self.parent(item)
         if parent:
             self.tristate_parent(parent)
@@ -71,13 +74,13 @@ class CheckboxTreeview(Treeview):
         """ uncheck the boxes of item's descendant """
         children = self.get_children(item)
         for iid in children:
-            self.item(iid, tags=("unchecked",))
+            self.item(iid, tags=("unchecked", ))
             self.uncheck_descendant(iid)
 
     def uncheck_ancestor(self, item):
         """ uncheck the box of item and change the state of the boxes of item's
             ancestors accordingly """
-        self.item(item, tags=("unchecked",))
+        self.item(item, tags=("unchecked", ))
         parent = self.parent(item)
         if parent:
             children = self.get_children(parent)
@@ -103,7 +106,7 @@ class CheckboxTreeview(Treeview):
             else:
                 self.uncheck_descendant(item)
                 self.uncheck_ancestor(item)
-                
+
 
 class FilterDialog(tkinter.simpledialog.Dialog):
     def body(self, master):
@@ -112,11 +115,15 @@ class FilterDialog(tkinter.simpledialog.Dialog):
         Label(master, text="Start date: ").grid(row=1, column=1)
         Label(master, text="End date: ").grid(row=2, column=1)
 
-        self.start = DateEntry(master, font=('Helvetica', 15, tk.NORMAL), border=0)
-        self.end = DateEntry(master, font=('Helvetica', 15, tk.NORMAL), border=0)
+        self.start = DateEntry(master,
+                               font=('Helvetica', 15, tk.NORMAL),
+                               border=0)
+        self.end = DateEntry(master,
+                             font=('Helvetica', 15, tk.NORMAL),
+                             border=0)
 
-        self.start.grid(row = 1, column = 2)
-        self.end.grid(row = 2, column = 2)
+        self.start.grid(row=1, column=2)
+        self.end.grid(row=2, column=2)
 
         return self.start
 
@@ -134,7 +141,6 @@ class FilterDialog(tkinter.simpledialog.Dialog):
 
 
 class MyDialog(tkinter.simpledialog.Dialog):
-
     def body(self, master):
 
         Label(master, text="Cookie: ").grid(row=0)
@@ -164,6 +170,7 @@ class MyDialog(tkinter.simpledialog.Dialog):
         except IOError:
             pass
 
+
 class MainWindow:
     def __init__(self, master):
         self.master = master
@@ -171,62 +178,72 @@ class MainWindow:
         self.master.geometry("680x530")
         self.sort = False
 
-        self.TreeView = CheckboxTreeview(master, show="tree")
-        self.TreeView.place(x = 20, y = 40, height = 300)
+        self.TreeView = CheckboxTreeView(master, show="tree")
+        self.TreeView.place(x=20, y=40, height=300)
 
-        self.Subscriptions = Label(master, text = "Active Subscriptions")
-        self.Subscriptions.place(x = 20, y = 20)
+        self.Subscriptions = Label(master, text="Active Subscriptions")
+        self.Subscriptions.place(x=20, y=20)
 
-        self.Status = Label(master, text = "Status: Idle")
-        self.Status.place(x = 20, y = 440)
+        self.Status = Label(master, text="Status: Idle")
+        self.Status.place(x=20, y=440)
 
-        self.FilesLeft = Label(master, text = "Files left to download: 0")
-        self.FilesLeft.place(x = 240, y = 440)
+        self.FilesLeft = Label(master, text="Files left to download: 0")
+        self.FilesLeft.place(x=240, y=440)
 
         vsb = Scrollbar(master, orient="vertical", command=self.TreeView.yview)
-        vsb.place(x=220, y=40, height=200+20)
+        vsb.place(x=220, y=40, height=200 + 20)
 
         self.TreeView.configure(yscrollcommand=vsb.set)
 
-        self.ComboBox = Combobox(master, state= "readonly",
-                                 values = ["Active Subscriptions",
-                                                   "Expired Subscriptions",
-                                                   "All Subscriptions"])
+        self.ComboBox = Combobox(master,
+                                 state="readonly",
+                                 values=[
+                                     "Active Subscriptions",
+                                     "Expired Subscriptions",
+                                     "All Subscriptions"
+                                 ])
 
         self.ComboBox.bind("<<ComboboxSelected>>", self.refresh)
         self.ComboBox.current(0)
-        self.ComboBox.place(x = 20, y = 350)
-        
+        self.ComboBox.place(x=20, y=350)
 
-        self.GetLinks = Button(master, text="Retrieve Links", command=self.Get_Links_T)
-        self.GetLinks.place(x = 20, y = 400)
+        self.GetLinks = Button(master,
+                               text="Retrieve Links",
+                               command=self.Get_Links_T)
+        self.GetLinks.place(x=20, y=400)
 
-        self.Download = Button(master, text="Download Files", command=self.Download_Files_T)
-        self.Download.place(x = 140, y = 400)
+        self.Download = Button(master,
+                               text="Download Files",
+                               command=self.Download_Files_T)
+        self.Download.place(x=140, y=400)
         self.Download.configure(state='disabled')
 
-        self.Add = Button(master, text="Add cookies/user agent", command=self.Add_CU)
-        self.Add.place(x = 490, y = 10)
+        self.Add = Button(master,
+                          text="Add cookies/user agent",
+                          command=self.Add_CU)
+        self.Add.place(x=490, y=10)
 
-        self.Filter = Button(master, text="Filter results by date", command=self.Filter_Date)
-        self.Filter.place(x = 485, y = 350)
+        self.Filter = Button(master,
+                             text="Filter results by date",
+                             command=self.Filter_Date)
+        self.Filter.place(x=485, y=350)
         self.Filter.configure(state='disabled')
 
-        self.LogText = tk.Text(master, height = 18, width = 48)
-        self.LogText.place(x = 240, y = 40)
+        self.LogText = tk.Text(master, height=18, width=48)
+        self.LogText.place(x=240, y=40)
 
-        self.ProgressBar = Progressbar(master, orient="horizontal",
-                                        length=350, mode="determinate")
-        self.ProgressBar.place(x = 250, y = 400)
+        self.ProgressBar = Progressbar(master,
+                                       orient="horizontal",
+                                       length=350,
+                                       mode="determinate")
+        self.ProgressBar.place(x=250, y=400)
         self.ProgressBar["maximum"] = 100
 
-        self.onlyfans = Onlyfans()
-        self.onlyfans.load_config()
-        self.onlyfans.get_subscriptions()
-        self.Sub_List = self.onlyfans.return_active_subs()
+        self.only_fans = OnlyFans()
+        self.only_fans.load_config()
+        self.only_fans.get_subscriptions()
+        self.Sub_List = self.only_fans.return_active_subs()
         self.list_subscribers(self.Sub_List)
-        
-
 
     def list_subscribers(self, lst):
         for x in range(0, len(lst)):
@@ -243,16 +260,16 @@ class MainWindow:
 
     def Add_CU(self):
         Diag = MyDialog(self.master)
-        self.onlyfans.load_config()
-        self.onlyfans.get_subscriptions()
-        self.Sub_List = self.onlyfans.return_active_subs()
+        self.only_fans.load_config()
+        self.only_fans.get_subscriptions()
+        self.Sub_List = self.only_fans.return_active_subs()
         self.list_subscribers(self.Sub_List)
 
     def Filter_Date(self):
         Diag = FilterDialog(self.master)
         dates = Diag.get_dates()
         if dates is None:
-            self.display_info(self.onlyfans.return_links())
+            self.display_info(self.only_fans.return_links())
             self.sort = False
             return
         both = True
@@ -265,15 +282,15 @@ class MainWindow:
         for c in range(0, len(start)):
             if start[c] == '':
                 self.sort = False
-                self.display_info(self.onlyfans.return_links())
+                self.display_info(self.only_fans.return_links())
                 return
             if end[c] == '':
                 both = False
 
-        if len(self.onlyfans.filter_list) > 0:
-            del self.onlyfans.filter_list[:]
+        if len(self.only_fans.filter_list) > 0:
+            del self.only_fans.filter_list[:]
 
-        links = self.onlyfans.return_links()
+        links = self.only_fans.return_links()
         for link in links:
             date_str = link["date"].split('T')[0]
             year = date_str.split("-")[0]
@@ -283,32 +300,31 @@ class MainWindow:
             if int(start[2]) < int(year):
                 if both == True:
                     if int(end[2]) >= int(year):
-                        self.onlyfans.filter_list.append(link)
+                        self.only_fans.filter_list.append(link)
                 else:
-                    self.onlyfans.filter_list.append(link)
-                    
+                    self.only_fans.filter_list.append(link)
+
             elif int(start[2]) == int(year):
                 if int(start[1]) < int(month):
                     if both == True:
                         if int(end[1]) >= int(month):
-                            self.onlyfans.filter_list.append(link)
+                            self.only_fans.filter_list.append(link)
                     else:
-                        self.onlyfans.filter_list.append(link)
+                        self.only_fans.filter_list.append(link)
                 elif int(start[1]) == int(month):
                     if int(start[0]) <= int(day):
                         if both == True:
                             if int(end[0]) >= int(day):
-                                self.onlyfans.filter_list.append(link)
+                                self.only_fans.filter_list.append(link)
                         else:
-                            self.onlyfans.filter_list.append(link)
+                            self.only_fans.filter_list.append(link)
 
         #for li in self.onlyfans.filter_list:
         #    print (li["date"])
-                    
 
-        if len(self.onlyfans.filter_list) > 0:
+        if len(self.only_fans.filter_list) > 0:
             self.sort = True
-            self.display_info(self.onlyfans.filter_list)
+            self.display_info(self.only_fans.filter_list)
         else:
             self.LogText.delete(1.0, tk.END)
             self.LogText.insert(tk.END, "")
@@ -318,24 +334,22 @@ class MainWindow:
         for link in links:
             size += link["size"]
         return size
-            
-        
 
     def refresh(self, event):
         choice = self.ComboBox.get()
         self.TreeView.delete(*self.TreeView.get_children())
         if choice == "Expired Subscriptions":
-            exp = self.onlyfans.return_expired_subs()
+            exp = self.only_fans.return_expired_subs()
             self.list_subscribers(exp)
-            self.Subscriptions.configure(text = "Expired Subscriptions")
+            self.Subscriptions.configure(text="Expired Subscriptions")
         elif choice == "All Subscriptions":
-            all_sub = self.onlyfans.return_all_subs()
+            all_sub = self.only_fans.return_all_subs()
             self.list_subscribers(all_sub)
-            self.Subscriptions.configure(text = "All Subscriptions")
+            self.Subscriptions.configure(text="All Subscriptions")
         else:
-            active = self.onlyfans.return_active_subs()
+            active = self.only_fans.return_active_subs()
             self.list_subscribers(active)
-            self.Subscriptions.configure(text = "Active Subscriptions")
+            self.Subscriptions.configure(text="Active Subscriptions")
         self.ComboBox.selection_clear()
 
     def File_Size_Str(self, size):
@@ -361,20 +375,22 @@ class MainWindow:
         users = []
         index = 0
 
-        self.Status.configure(text = "Status: Collecting Links ...")
-        self.onlyfans.reset_download_size()
-        self.onlyfans.clear_links()
-        self.onlyfans.clear_array()
+        self.Status.configure(text="Status: Collecting Links ...")
+        self.only_fans.reset_download_size()
+        self.only_fans.clear_links()
+        self.only_fans.clear_array()
 
         self.Download.configure(state='disabled')
-        
+
         for child in self.TreeView.get_children():
             flag = 0
             state = self.TreeView.item(child)["tags"][0]
             if state == "checked":
-                ALL = (module.OF.MESSAGES | module.OF.PICTURES | module.OF.VIDEOS | module.OF.HIGHLIGHTS |
-                       module.OF.STORIES | module.OF.ARCHIVED | module.OF.AUDIO)
-                tmp = { child : ALL}
+                ALL = (module.OF.MESSAGES | module.OF.PICTURES
+                       | module.OF.VIDEOS | module.OF.HIGHLIGHTS
+                       | module.OF.STORIES | module.OF.ARCHIVED
+                       | module.OF.AUDIO)
+                tmp = {child: ALL}
                 users.append(tmp)
             elif state == "unchecked":
                 continue
@@ -393,21 +409,21 @@ class MainWindow:
                             flag |= module.OF.ARCHIVED
                         elif self.TreeView.item(c)['text'] == "Audio":
                             flag |= module.OF.AUDIO
-                tmp = {child : flag}
+                tmp = {child: flag}
                 users.append(tmp)
-                
+
         for u in users:
             for key, value in u.items():
-                dict_return = self.onlyfans.get_user_info(key)
+                dict_return = self.only_fans.get_user_info(key)
                 if dict_return is None:
                     continue
-                self.onlyfans.get_links(dict_return, value, index)
+                self.only_fans.get_links(dict_return, value, index)
                 index += 1
-                
-        links = self.onlyfans.return_links()
+
+        links = self.only_fans.return_links()
         if len(links) == 0:
             self.GetLinks.configure(state='normal')
-            self.Status.configure(text = "Status: Done ...")
+            self.Status.configure(text="Status: Done ...")
             return
 
         self.display_info(links)
@@ -429,14 +445,20 @@ class MainWindow:
         elif flag & module.OF.AUDIO:
             return "Audio"
 
-
     def display_info(self, links):
         total_size = 0
         user_size = 0
         file_count = 0
-        type_file = {"Messages" : 0, "Highlights" : 0, "Images" : 0, "Videos" : 0, "Stories" : 0,
-                     "Archived" : 0, "Audio" : 0}
-        
+        type_file = {
+            "Messages": 0,
+            "Highlights": 0,
+            "Images": 0,
+            "Videos": 0,
+            "Stories": 0,
+            "Archived": 0,
+            "Audio": 0
+        }
+
         self.LogText.delete(1.0, tk.END)
         current_user = links[0]["index"]
         flag = 0
@@ -448,13 +470,17 @@ class MainWindow:
                 flag = file["flag"]
                 type_file[self.string_flag(flag)] += 1
             else:
-                user_name = self.onlyfans.subscript_array(current_user) + ": \n"
+                user_name = self.only_fans.subscript_array(
+                    current_user) + ": \n"
                 self.LogText.insert(tk.END, user_name)
                 for key, value in type_file.items():
-                    self.LogText.insert(tk.END, "   " + key + ": " + str(value) + "\n")
+                    self.LogText.insert(tk.END,
+                                        "   " + key + ": " + str(value) + "\n")
                     type_file[key] = 0
-                self.LogText.insert(tk.END, "   Total size: " + self.File_Size_Str(user_size) + "\n")
-                
+                self.LogText.insert(
+                    tk.END,
+                    "   Total size: " + self.File_Size_Str(user_size) + "\n")
+
                 user_size = 0
                 file_count = 1
                 current_user = file["index"]
@@ -463,15 +489,16 @@ class MainWindow:
                 flag = file["flag"]
                 type_file[self.string_flag(flag)] += 1
 
-        user_name = self.onlyfans.subscript_array(current_user) + ": \n"
-        self.LogText.insert(tk.END, user_name)      
+        user_name = self.only_fans.subscript_array(current_user) + ": \n"
+        self.LogText.insert(tk.END, user_name)
         for key, value in type_file.items():
             self.LogText.insert(tk.END, "   " + key + ": " + str(value) + "\n")
             type_file[key] = 0
 
-        self.LogText.insert(tk.END, "   Total size: " + self.File_Size_Str(user_size) + "\n")      
+        self.LogText.insert(
+            tk.END, "   Total size: " + self.File_Size_Str(user_size) + "\n")
         self.LogText.insert(tk.END, "\n\n")
-                
+
         temp_str = "Files to be downloaded: " + str(len(links)) + "\n"
         self.LogText.insert(tk.END, temp_str)
         temp_str = "Download Size: " + self.File_Size_Str(total_size) + "\n"
@@ -479,75 +506,76 @@ class MainWindow:
 
         self.GetLinks.configure(state='normal')
         self.Download.configure(state='normal')
-        self.Status.configure(text = "Status: Done ...")
+        self.Status.configure(text="Status: Done ...")
 
     def write_through_file(self):
         file_name = "onlyfans.continue"
-        names = self.onlyfans.return_user_array()
-        links = self.onlyfans.return_links()
+        names = self.only_fans.return_user_array()
+        links = self.only_fans.return_links()
         try:
             with open(file_name, "w") as write_through:
-                for x in range (0, len(names)):
+                for x in range(0, len(names)):
                     write_through.write(names[x]["username"])
                     if x != len(names) - 1:
                         write_through.write(",")
                 write_through.write("\n")
                 for link in links:
                     json.dump(link, write_through)
-                    write_through.write("\n")      
+                    write_through.write("\n")
         except IOError:
             pass
-    
+
     def Download_Files(self):
         names = []
         files = []
-        if len(self.onlyfans.return_links()) > 0:
-            answer = messagebox.askyesno("Question","Start downloading files?")
+        if len(self.only_fans.return_links()) > 0:
+            answer = messagebox.askyesno("Question",
+                                         "Start downloading files?")
             if answer != False:
-                names = self.onlyfans.return_user_array().copy()
-                if self.sort == True:
-                    files = self.onlyfans.filter_list.copy()
-                    self.onlyfans.all_files_size = self.link_size(files)
+                names = self.only_fans.return_user_array().copy()
+                if self.sort:
+                    files = self.only_fans.filter_list.copy()
+                    self.only_fans.all_files_size = self.link_size(files)
                 else:
-                    files = self.onlyfans.return_links().copy()
+                    files = self.only_fans.return_links().copy()
                 file_len = len(files)
-                self.Status.configure(text = "Status: Downloading Files...")
+                self.Status.configure(text="Status: Downloading Files...")
                 self.Filter.configure(state='disabled')
                 self.ProgressBar['value'] = 0
-                
+
                 current_user = files[0]["index"]
-                user_folder = self.onlyfans.subscript_array(current_user)
-                self.onlyfans.create_dir(user_folder)
+                user_folder = self.only_fans.subscript_array(current_user)
+                self.only_fans.create_dir(user_folder)
                 #self.write_through_file()
-                
+
                 for file in files:
-                    self.FilesLeft.configure(text = "Files left to download: " + str(file_len))
+                    self.FilesLeft.configure(text="Files left to download: " +
+                                             str(file_len))
                     if file["index"] == current_user:
-                        self.onlyfans.download(self, user_folder, file)
+                        self.only_fans.download(self, user_folder, file)
                     else:
                         current_user = file["index"]
-                        user_folder = self.onlyfans.subscript_array(current_user)
-                        self.onlyfans.create_dir(user_folder)
-                        self.onlyfans.download(self, user_folder, file)
+                        user_folder = self.only_fans.subscript_array(
+                            current_user)
+                        self.only_fans.create_dir(user_folder)
+                        self.only_fans.download(self, user_folder, file)
                     file_len -= 1
-                    self.onlyfans.insert_database(names[current_user], file)
+                    self.only_fans.insert_database(names[current_user], file)
                     #self.write_through_file()
-                self.FilesLeft.configure(text = "Files left to download: " + str(file_len))
-                self.Status.configure(text = "Status: Done ...")
-                        
+                self.FilesLeft.configure(text="Files left to download: " +
+                                         str(file_len))
+                self.Status.configure(text="Status: Done ...")
+
         else:
-            self.Status.configure(text = "Status: Done ...")
+            self.Status.configure(text="Status: Done ...")
             self.Download.configure(state='normal')
             return
         #os.remove("onlyfans.continue")
-        self.onlyfans.clear_links()
-        self.onlyfans.clear_array()
-        self.onlyfans.clear_filter()
+        self.only_fans.clear_links()
+        self.only_fans.clear_array()
+        self.only_fans.clear_filter()
         self.Filter.configure(state='disabled')
         self.Download.configure(state='disabled')
-
-
-
 
 
 if __name__ == "__main__":
@@ -556,6 +584,6 @@ if __name__ == "__main__":
     except FileExistsError:
         pass
     root = tk.Tk()
-    
+
     MainWind = MainWindow(root)
     root.mainloop()

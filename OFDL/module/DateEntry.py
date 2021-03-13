@@ -1,7 +1,10 @@
 import tkinter as tk
 
+
 class DateEntry(tk.Frame):
-    def __init__(self, master, frame_look={}, **look):
+    def __init__(self, master, frame_look=None, **look):
+        if frame_look is None:
+            frame_look = {}
         args = dict(relief=tk.SUNKEN, border=1)
         args.update(frame_look)
         tk.Frame.__init__(self, master, **args)
@@ -27,7 +30,8 @@ class DateEntry(tk.Frame):
         self.entry_2.bind('<KeyRelease>', lambda e: self._check(1, 2))
         self.entry_3.bind('<KeyRelease>', lambda e: self._check(2, 4))
 
-    def _backspace(self, entry):
+    @staticmethod
+    def _backspace(entry):
         cont = entry.get()
         entry.delete(0, tk.END)
         entry.insert(0, cont[:-1])

@@ -1,5 +1,5 @@
 # OFDL
-Media downloader with graphical user interface using PyQt5.
+Onlyfans media downloader with graphical user interface using PyQt5.
 
 Downloads media files from *OF* (images, videos, highlights, stories)
 

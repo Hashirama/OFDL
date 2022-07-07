@@ -1,39 +1,47 @@
 # OFDL
-meh media downloader with graphical user interface using Python's tkinter.
+Media downloader with graphical user interface using PyQt5.
 
-Downloads media files from *meh* (images, videos, highlights)
+Downloads media files from *OF* (images, videos, highlights, stories)
 
-On Windows the only requirement should be requests which can be installed using pip.exe in the Scripts folder of the python installation directory - "pip install requests". 
+The only requirements should be requests and PyQt5
+
+Before logging in, press F12 (or inspect/inspect element and go to the network tab) to bring up the "developer tools" and then log in. You should see "init" as shown below. If not, type in the search "init" and or refresh the page. Once you've found it, click on it.
+
+<img src="https://raw.githubusercontent.com/Hashirama/OFDL/master/init.png">
+
+Scroll down to the section "request headers" and everything you will need should be in this section (cookie, useragent, x-bc):
+
+<img src="https://raw.githubusercontent.com/Hashirama/OFDL/master/request.png">
 
 
-Before logging in, press F12 (or inspect/inspect element and go to the network tab) to bring up the "developer tools" and then log in. Type "init?" in the search bar and copy the text after the word "cookie:" but don't copy the "referer:". So when copying the cookie you should highlight: sc_is_visitor_unique, ref_src, sess, auth_id and auth_hash (some might not be there anymore so just copy what you do see there). Also copy the user-agent:
+ Copy these three values:
+ <img src="https://raw.githubusercontent.com/Hashirama/OFDL/master/cookie.png">
+ <img src="https://raw.githubusercontent.com/Hashirama/OFDL/master/user_agent.png">
+ <img src="https://raw.githubusercontent.com/Hashirama/OFDL/master/x_bc.png">
+ 
+ and put them into the textbox displayed after you click on the buttons pointed at in the below image:
+ 
+ <img src="https://raw.githubusercontent.com/Hashirama/OFDL/master/options.png">
+ 
+ After you've added all three values, and you click the "x" button on the Options window, it should then fetch a list of your subscriptions.
 
-<img src="https://github.com/Hashirama/OFDL/blob/master/of2.png">
-
-Paste the cookie and user-agent to the application and press OK:
-
-<img src="https://github.com/Hashirama/OFDL/blob/master/of.png" width="500">
-
-
- It should then retrieve the users you're subscribed to. 
+ 
  
  # Requirements
 
-Written using Python 3.7 so use 3.7 or anything above.
+Written using Python 3.9 so use 3.9 or anything above.
 
-On Windows, tkinter should already come with Python 3 so the only thing needed would be requests:
+The only two requirements/dependencies should be requests and PyQt5.
 
-<pre><code>pip install requests</code></pre>
+There is a "requirements.txt" file that can be used to install the dependencies at the command line: 
 
-Then run the script OFDL.py by double clicking it or from IDLE (IDLE would be better just incase any errors occur).
+<pre><code>pip3 install -r requirements.txt</code></pre>
 
-I don't believe tkinter comes installed with Python 3 on Ubuntu so it can be installed using:
-
-<pre><code>sudo apt-get install python3.7-tk</pre></code>
-
-(Assuming you are using Python 3.7.) If requests is needed run:
+or 
 
 <pre><code>pip3 install requests</code></pre>
+<pre><code>pip3 install pyqt5</code></pre>
 
-To run script: <pre><code>python3.7 OFDL.py</code></pre>
+The main script is OFDL.py and can be run on some systems by double clicking it (usually Windows) or by going into the directory using terminal or the command line and executing:
 
+<pre><code>python3 OFDL.py</code></pre>

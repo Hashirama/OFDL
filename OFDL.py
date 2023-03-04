@@ -28,6 +28,7 @@ from PyQt5.QtWidgets import QTreeWidgetItem
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
 
+
 class Settings:
     def __init__(self, filename: str) -> None:
         self.filename = filename
@@ -83,11 +84,9 @@ class ConfigDlg(QWidget):
 
         
 
-        
-        
-
 class OptionWindow(QWidget):
-    def __init__(self, Onlyfans: snafylno.Onlyfans, grab_subscriptions: Callable, data_display: QtCore.pyqtBoundSignal) -> None:
+    def __init__(self, Onlyfans: snafylno.Onlyfans,
+                 grab_subscriptions: Callable, data_display: QtCore.pyqtBoundSignal) -> None:
         super().__init__()
         self.setWindowTitle('Options')
         self.setGeometry(100, 100, 250, 180)
@@ -124,7 +123,6 @@ class OptionWindow(QWidget):
             return
 
         self.Onlyfans.load_config()
-
         thread = Thread(target = self.check_login)
         thread.start()
 
@@ -143,9 +141,7 @@ class OptionWindow(QWidget):
 
     def change_option_avatar(self) -> bool:
         current_option = self.settings.show_avatar()
-        
         new_option = self.settings.set_option('show_avatar', (not current_option))
-
         self.display_avatar.setText("Show Avatars: {0}".format(new_option))
 
         return new_option
@@ -185,7 +181,7 @@ class MainWindow(QWidget):
 
         self.information_label_general = QLabel(self.general_tab)
         self.information_label_general.move(0, 405)
-        self.information_label_general.resize(150, 50)
+        self.information_label_general.resize(500, 50)
         self.information_label_general.setStyleSheet("color: red")
 
         self.information_label_links = QLabel(self.links_tab)
@@ -195,7 +191,7 @@ class MainWindow(QWidget):
 
         self.information_label_download = QLabel(self.download_tab)
         self.information_label_download.move(0, 405)
-        self.information_label_download.resize(400, 50)
+        self.information_label_download.resize(550, 50)
         self.information_label_download.setStyleSheet("color: red")
 
         self.information_photo_count = QLabel(self.general_tab)
@@ -276,8 +272,9 @@ class MainWindow(QWidget):
                            self.post_checkbox, self.archived_checkbox]
 
         self.grab_links = QPushButton("Grab Links", parent = self.general_tab)
-        self.grab_links.move(200, 400)
+        self.grab_links.move(500, 400)
         self.grab_links.clicked.connect(self.get_links)
+        self.grab_links.setEnabled(False)
 
         self.download_links = QPushButton("Download Files", parent = self.links_tab)
         self.download_links.move(100, 400)
@@ -290,7 +287,8 @@ class MainWindow(QWidget):
         
 
         self.tree_links = QTreeWidget(parent = self.links_tab)
-        self.tree_links.setHeaderLabels(["Model", "Type", "Caption / Text", "Date of post", "Post ID"])
+        self.tree_links.setHeaderLabels(["Model", "Type", "Caption / Text",
+                                         "Date of post", "Post ID"])
         self.tree_links.resize(720, 300)
         self.tree_links.move(30, 20)
         self.tree_links.columnWidth(300)
@@ -307,10 +305,11 @@ class MainWindow(QWidget):
         self.show()
 
         self.Onlyfans.load_config()
-        self.data_display.connect(self.update_main_label)
+        self.data_display.connect(self.update_main)
 
         if self.Onlyfans.user_logged_in() is True:
-            thread = Thread(target = self.fetch_and_display_subs, args=(self.data_display,))
+            thread = Thread(target = self.fetch_and_display_subs,
+                            args=(self.data_display,))
             thread.start()
         else:
             self.information_label_general.setText("Not logged in...")
@@ -330,7 +329,7 @@ class MainWindow(QWidget):
         self.display_checkboxes(False)
         count = self.Onlyfans.get_subscriptions()
         self.subscription_list = self.Onlyfans.return_active_subs()
-        self.display_subscriptions(self.subscription_list)
+        self.display_subscriptions(self.subscription_list, data_display)
         data["info"] = "Done ..."
         data_display.emit(data)
         if count > 0:
@@ -353,7 +352,8 @@ class MainWindow(QWidget):
                 self.message_checkbox.setEnabled(True)
                 self.grab_links.setEnabled(True)
                 
-        self.Onlyfans.get_user_info(profile)
+        if self.Onlyfans.get_user_info(profile) is False:
+            self.display_checkboxes(False)
         self.switch_selections(profile.get_flag())
 
         self.current_user.setText("<h4>" + self.current_username + "</h4>")
@@ -381,17 +381,14 @@ class MainWindow(QWidget):
             profile = profiles[key]
             if profile.get_flag() > 0:
                 self.Onlyfans.get_links(profile)
+            if profile.error_set() is False and profile.get_flag() > 0:
+                data["info"] = "Collected -> {0},  still collecting...".format(profile.username())
+                data_display.emit(data)
 
         data["info"] = "Done ..."
         data_display.emit(data)
 
-        self.display_collected_links(profiles)
-        self.tabs.setCurrentWidget(self.links_tab)
-        self.grab_links.setEnabled(True)
-        root = self.tree_links.invisibleRootItem()
-        count = root.childCount()
-        if count > 0:
-            self.download_links.setEnabled(True)
+        self.display_collected_links(profiles, data_display)
         
         
 
@@ -399,7 +396,7 @@ class MainWindow(QWidget):
         if hasattr(self, 'current_username') is False:
             return
         self.information_label_general.setText("Fetching data ...")
-        self.information_label_general
+        self.download_links.setEnabled(False)
         thread = Thread(target = self._get_links, args=(self.data_display,))
         thread.start()
         self.grab_links.setEnabled(False)
@@ -432,31 +429,62 @@ class MainWindow(QWidget):
             total_posts[0] += profiles[username].media_count()
             usernames[username] = post_ids
 
-        profile = profiles[username]
-        posts = profile.fetch_posts()
-        
+        profile = profiles[username]   
 
+        self.download_links.setEnabled(False)
         self.Onlyfans.data_display.connect(self.update)
         self.Onlyfans.download_profiles(usernames, total_posts)
-
-    def update(self, data):
+        
+    def update(self, data: Dict) -> None:
         if 'username' in data and 'path' in data and 'filename' in data:
             item = QTreeWidgetItem(self.download_tree)
             item.setText(0, data["username"])
             item.setText(1, data["path"])
             item.setText(2, data["filename"])
-
         if 'info' in data:
             self.information_label_download.setText(data['info'])
-        else:
+        elif 'total' in data:
             self.information_label_download.setText("Posts left to download: {0}".format(data["total"]))
 
-    def update_main_label(self, data):
+    def update_main(self, data: Dict) -> None:
         if 'info' in data:
             self.information_label_general.setText(data['info'])
+        if 'display_subscriptions' in data:
+            if 'username' in data:
+                item = QTreeWidgetItem(self.tree)
+                item.setText(0, data["username"])
+        if 'display_links' in data:
+            profile = data["profile"]
+            username = QTreeWidgetItem(self.tree_links)
+            username.setText(0, profile.username())
+            username.setFlags(QtCore.Qt.ItemIsTristate | QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+            username.setCheckState(0, QtCore.Qt.Unchecked)
+
+            fmt = "{0} has {1} media that can be downloaded".format(profile.username(),
+                                                                    profile.media_count())
+            username.setToolTip(0, fmt)
+
+            user_posts = data["posts"]
+            for key in user_posts:
+                item = QTreeWidgetItem(username)
+                item.setText(1, type(user_posts[key]).__name__)
+                item.setText(2, user_posts[key].caption())
+                item.setText(3, user_posts[key].posted_at())
+                item.setText(4, str(user_posts[key].id()))
+                item.setFlags(QtCore.Qt.ItemIsTristate | QtCore.Qt.ItemIsUserCheckable |
+                                   QtCore.Qt.ItemIsEnabled)
+                item.setCheckState(2, QtCore.Qt.Checked)
+                item.setTextAlignment(3, QtCore.Qt.AlignLeft)
+
+            self.tabs.setCurrentWidget(self.links_tab)
+            self.grab_links.setEnabled(True)
+            root = self.tree_links.invisibleRootItem()
+            count = root.childCount()
+            if count > 0:
+                self.download_links.setEnabled(True)
 
 
-    def download_files(self):
+    def download_files(self) -> None:
         ret = QMessageBox.question(self, 'MessageBox',
                                    "Would you like to start downloading posts?",
                                    QMessageBox.No | QMessageBox.Yes)
@@ -469,16 +497,19 @@ class MainWindow(QWidget):
        
 
 
-    def combo_change(self, i):
+    def combo_change(self, i: int) -> None:
         self.tree.clear()
         if i == 0:
-            self.display_subscriptions(self.subscription_list)
+            self.display_subscriptions(self.subscription_list,
+                                       self.data_display)
         elif i == 1:
-            self.display_subscriptions(self.expired_subscriptions)
+            self.display_subscriptions(self.expired_subscriptions,
+                                       self.data_display)
         elif i == 2:
-            self.display_subscriptions(self.all_subscriptions)
+            self.display_subscriptions(self.all_subscriptions,
+                                       self.data_display)
 
-    def check_change(self, state):
+    def check_change(self, state: int) -> None:
         if isinstance(self.sender(), QCheckBox):
             check_name = self.sender().text()
             user = self.current_username
@@ -507,7 +538,8 @@ class MainWindow(QWidget):
                     self.all_checkbox.nextCheckState()
                         
 
-    def change_flags(self, user, name, _profile, flag, state):
+    def change_flags(self, user: str, name: str, _profile: snafylno.Profile, flag: int,
+                     state: bool) -> None:
         if name == "All":
             flag = (snafylno.ALL | flag) if state is True else \
                    (~snafylno.ALL & flag)
@@ -550,39 +582,30 @@ class MainWindow(QWidget):
         
 
 
-    def display_collected_links(self, profiles: Dict) -> None:
+    def display_collected_links(self, profiles: Dict,
+                                data_display: QtCore.pyqtBoundSignal) -> None:
         self.tree_links.clear()
         for key in profiles:
             profile = profiles[key]
-            if profile.flags == 0 or len(profile) < 1:
+            if profile.get_flag() == 0 or len(profile) < 1:
                 continue
             user_posts = profile.fetch_posts()
-            
-            username = QTreeWidgetItem(self.tree_links)
-            username.setText(0, profile.username())
-            username.setFlags(QtCore.Qt.ItemIsTristate | QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
-            username.setCheckState(0, QtCore.Qt.Unchecked)
 
-            fmt = "{0} has {1} media that can be downloaded".format(profile.username(), profile.media_count())
-            username.setToolTip(0, fmt)
+            data = {}
+            data["display_links"] = True
+            data["profile"] = profile
+            data["posts"] = user_posts
+            data_display.emit(data)
 
-
-            for key in user_posts:
-                post_item = QTreeWidgetItem(username)
-                post_item.setText(1, type(user_posts[key]).__name__)
-                post_item.setText(2, user_posts[key].caption())
-                post_item.setText(3, user_posts[key].posted_at())
-                post_item.setText(4, str(user_posts[key].id()))
-                post_item.setFlags(QtCore.Qt.ItemIsTristate | QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
-                post_item.setCheckState(2, QtCore.Qt.Checked)
-                post_item.setTextAlignment(3, QtCore.Qt.AlignLeft)
-
-    def display_subscriptions(self, subscriptions: Dict) -> None:
+    def display_subscriptions(self, subscriptions: Dict,
+                              data_display: QtCore.pyqtBoundSignal) -> None:
         for key in subscriptions:
             profile = subscriptions[key]
             username = profile.username()
-            item = QTreeWidgetItem(self.tree)
-            item.setText(0, username)
+            data = {}
+            data["display_subscriptions"] = True
+            data["username"] = username
+            data_display.emit(data)
 
 
     def display_checkboxes(self, _bool) -> None:
@@ -592,7 +615,7 @@ class MainWindow(QWidget):
 
 
 
-def except_hook(cls, exception, traceback):
+def except_hook(cls, exception, traceback) -> None:
     sys.__excepthook__(cls, exception, traceback)
 
     

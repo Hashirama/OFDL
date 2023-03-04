@@ -192,7 +192,14 @@ class MediaItem:
                 source = info["source"]
                 if source["source"] is not None:
                     src = source["source"]
-            return src
+        if 'files' in self.data:
+            files = self.data["files"]
+            if 'source' in files:
+                source = files["source"]
+                if 'url' in source:
+                    src = source["url"]
+        return src
+            
 
     def width(self) -> int:
         width = 0
@@ -440,35 +447,61 @@ class Profile:
         self.flags = 0
         self.gathered_flags = 0
         self.posts = {}
+        self.error = False
         self.lock = threading.Lock()
-        #stop duplications when get link is pressed again
 
     def __len__(self) -> int:
         return len(self.fetch_posts())
 
+    def set_error(self) -> bool:
+        self.error = True
+        return self.error
 
-    def download(self, stop_event, display_data: QtCore.pyqtBoundSignal, post_ids: list[int], total: List[int]) -> None:
+    def error_set(self) -> bool:
+        return self.error
+
+
+    def download(self, stop_event, display_data: QtCore.pyqtBoundSignal,
+                 post_ids: list[int],
+                 total: List[int]) -> None:
+        data = {}
         pool = ThreadPool(2, stop_event)
+        data["info"] = "Downloading..."
+        display_data.emit(data)
         for post_id in post_ids:
             conn = Database("onlyfans.sqlite3.db")
             _post = self.fetch_posts()[int(post_id)]
             pool.add_task(_post.download, display_data, self.lock, conn, total)
         pool.wait_completion()
-        data = {}
-        data["info"] = "Done..."
-        display_data.emit(data)
-      
+        if total[0] == 0:
+            data["info"] = "Completed..."
+            display_data.emit(data)
 
     def fetch_posts(self) -> Dict:
-        return {key : self.posts[key] for key in self.posts if len(self.posts[key]) > 0}
+        entire_list = {key : self.posts[key] for key in self.posts if len(self.posts[key]) > 0}
+        result = entire_list.copy()
+        for key, value in entire_list.items():
+            _type = type(value).__name__
+            flags = self.get_flag()
+            if not (flags & MESSAGES) and _type == "MessageItem" or \
+               not (flags & PICTURES) and _type == "Post" or \
+               not (flags & VIDEOS) and _type == "Post" or \
+               not (flags & HIGHLIGHTS) and _type == "Highlight" or \
+               not (flags & STORIES) and _type == "Story" or \
+               not (flags & ARCHIVED) and _type == "Archived" or \
+               not (flags & AUDIO) and _type == "Audio":
+                del result[key]
+                
+        return result
 
     def post_count(self) -> int:
         return len(self.posts)
 
     def media_count(self) -> int:
         total = 0
-        for key in self.fetch_posts():
-            post = self.fetch_posts()[key]
+        posts = self.fetch_posts()
+        for key in posts:
+            post = posts[key]
             if post.can_view():
                 total += post.media_count()
         return total
@@ -556,8 +589,6 @@ class Profile:
             
         
     
- 
-
 class Onlyfans(QtCore.QObject):
     data_display = QtCore.pyqtSignal(object)
     stop_event = threading.Event()
@@ -585,12 +616,14 @@ class Onlyfans(QtCore.QObject):
         self.subscriptions = "https://onlyfans.com/api2/v2/subscriptions/subscribes?offset={0}&type=all&sort=desc&field=expire_date&limit=10"
 
 
-    def signal_stop_event(self):
+    def signal_stop_event(self) -> None:
         self.stop_event.set()
         
                 
     def user_logged_in(self) -> bool:
         data = {}
+        settings = {}
+        additional = {}
         data["info"] = "Attempting to log in"
         self.data_display.emit(data)
         self.set_session_headers()
@@ -642,8 +675,13 @@ class Onlyfans(QtCore.QObject):
         profiles = self.return_all_subs()
         for username_key in user_post_ids:
             profile = profiles[username_key]
+            data = {}
+            data["info"] = "Starting download..."
+            self.data_display.emit(data)
             pool.add_task(profile.download, self.stop_event, self.data_display,
                           user_post_ids[username_key], total)
+        
+            
         
     
     def load_config(self) -> None:
@@ -728,9 +766,9 @@ class Onlyfans(QtCore.QObject):
     def return_all_subs(self) -> Dict:
         return self.profiles
 
-    def get_user_info(self, profile) -> None:
+    def get_user_info(self, profile) -> bool:
         if len(profile.info) > 0:
-            return
+            return True
         link = self.users.format(profile.username())
 
         self.create_sign(self.session, link)
@@ -738,12 +776,15 @@ class Onlyfans(QtCore.QObject):
         json_data = json.loads(r.text)
 
         if json_data is None:
-            return
+            return False
         if "error" in json_data:
+            if profile.error_set() is False:
+                profile.set_error()
             print (json_data)
-            return
+            return False
 
         profile.set_info(json_data)
+        return True
 
 
     def get_links(self, profile):
@@ -797,16 +838,17 @@ class Onlyfans(QtCore.QObject):
             self.create_sign(self.session, link)
             r = self.session.get(link)
             json_data = json.loads(r.text)
-            for node in json_data:
-                highlight_id = node["id"]
-                link = self.highlight.format(highlight_id)
-                self.create_sign(self.session, link)
-                r = self.session.get(link)
-                _json_data = json.loads(r.text)
-                _json_data["Highlight"] = True
-                _json_data["username"] = profile.username()
-                profile.parse_posts(_json_data)
-                profile.gathered_flags |= HIGHLIGHTS
+            if 'list' in json_data:
+                for node in json_data["list"]:
+                    highlight_id = node["id"]
+                    link = self.highlight.format(highlight_id)
+                    self.create_sign(self.session, link)
+                    r = self.session.get(link)
+                    _json_data = json.loads(r.text)
+                    _json_data["Highlight"] = True
+                    _json_data["username"] = profile.username()
+                    profile.parse_posts(_json_data)
+                    profile.gathered_flags |= HIGHLIGHTS
 
         if (flag & MESSAGES) and not (profile.gathered_flags & MESSAGES):
             offset = 0

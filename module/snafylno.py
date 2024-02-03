@@ -598,7 +598,6 @@ class Onlyfans(QtCore.QObject):
         self.session = requests.Session()
         self.set_session_headers()
         self.logged_in = self.user_logged_in()
-
         
         self.base_url = "https://onlyfans.com/"
         self.login = "https://onlyfans.com/api2/v2/users/login"
@@ -639,7 +638,6 @@ class Onlyfans(QtCore.QObject):
            "additional" in json_response["upload"]["geoUploadArgs"]:
             additional = json_response["upload"]["geoUploadArgs"]["additional"]
 
-        del json_response["isAuth"]
         if "isAuth" in json_response:
             return json_response["isAuth"]
         elif "userLoginPrefix" in settings and "user" in additional:
